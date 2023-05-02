@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
             exit(0);
         }
         
-        waitpid(pid, &status, 0);
+        //waitpid(pid, &status, 0);
         close(new_fd); //parent doesn't need this
     }
 
