@@ -10,8 +10,6 @@
 #include <netdb.h> 
 #include <arpa/inet.h>
 
-#define MAXDATASIZE 100 //max number of bytes we can get at once
-
 bool readLine(char** line, size_t* size, size_t* length);
 
 //get sockaddr, IPv4 or IPv6:
@@ -24,7 +22,6 @@ void *get_in_addr(struct sockaddr *sa) {
 
 int main(int argc, char *argv[]) {
     int sockfd, numbytes;
-    char buf[MAXDATASIZE];
     struct addrinfo hints, *servinfo, *p;
     int rv;
     char s[INET6_ADDRSTRLEN];
@@ -68,7 +65,8 @@ int main(int argc, char *argv[]) {
         return 2;
     }
 
-    printf("\tConnection established, now waiting for user input...\n\n");
+    // Step 1. The client connects to the server.
+    printf("\tConnection established\n\n");
 
     freeaddrinfo(servinfo);
 
@@ -76,27 +74,58 @@ int main(int argc, char *argv[]) {
     size_t size = 0;
     size_t len;
 
+    // Step 2. The client receives all the names of all the folders the server has.
+    char folder_names[1024];
+    if((numbytes = recv(sockfd, folder_names, 99, 0)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+    folder_names[numbytes] = '\0';
+    printf("\tFolders on the server:\n");
+    char folder_name[1024];
+    int j = 0;
+    for(int i = 0; i < strlen(folder_names); i++) {
+        if(folder_names[i] == ',') {
+            printf("\t\t%s\n", folder_name);
+            folder_name[0] = '\0';
+            j = 0;
+            i++;
+        }
+        folder_name[j] = folder_names[i];
+        j++;
+    }
+
     while(readLine(&line, &size, &len)) {
         printf("\n");
-        printf("\tSending message to Server...\n\n");
 
+        // Step 3. The client sends the server either of the following messages:
+        //  “access foldername”, “download foldername”, “create foldername”, “delete foldername”
         if(send(sockfd, line, len, 0) == -1) {
             perror("send");
         }
 
-        if(strcmp(line,";;;")==0) break;
-
-        char buf2[1024];
-
-        if((numbytes = recv(sockfd, buf2, 99, 0)) == -1) {
+        //  recv parsed cmd
+        char cmd[1024];
+        if((numbytes = recv(sockfd, cmd, 99, 0)) == -1) {
             perror("recv");
             exit(1);
         }
-
-        buf2[numbytes] = '\0';
-
+        cmd[numbytes] = '\0';
         printf("\tReceived response from server of\n\n");
-        printf("\t\t\"%s\"\n\n", buf2);
+        printf("\t\t\"%s\"\n\n", cmd);
+
+        if(strcmp(cmd, "access") == 0) {
+            // Step 3a. 
+        }
+        if(strcmp(cmd, "download") == 0) {
+            // Step 3b. 
+        }
+        if(strcmp(cmd, "create") == 0) {
+            // Step 3c. 
+        }
+        if(strcmp(cmd, "delete") == 0) {
+            // Step 3d. 
+        }
     }
 
     printf("User entered sentinel of \";;;\", now stopping client\n\n");
@@ -113,20 +142,12 @@ int main(int argc, char *argv[]) {
 
 bool readLine(char** line, size_t* size, size_t* length) {
     while(1) {
-        printf("\tprompt> ");
+        printf("\t> ");
         size_t len = getline(line, size, stdin);
-
-        if(len == -1)
-            return false;
-
-        if((*line)[len-1] == '\n')
-            (*line)[--len] = '\0';
-
+        if(len == -1) return false;
+        if((*line)[len-1] == '\n') (*line)[--len] = '\0';
         *length = len;
-
-        if(len == 0)
-            continue;
-        
-        return len > 1;
+        if(len == 0) continue;
+        return (strcmp(*line, "exit") != 0) && len > 0;
     }
 }

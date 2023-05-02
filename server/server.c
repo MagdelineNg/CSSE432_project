@@ -11,6 +11,7 @@
 #include <netdb.h> 
 #include <arpa/inet.h> 
 #include <ctype.h>
+#include <dirent.h>
 
 #define BACKLOG 10 //how many pending connections queue will hold
 
@@ -123,40 +124,53 @@ int main(int argc, char *argv[]) {
         if(!pid) { //this is the child process
             close(sockfd); //child doesn't need the listener
 
-            printf("\tNow listening for incoming messages...\n\n");
-            int num_message = 0;
-            while(1) {
-                num_message++;
+            // Step 2. The server sends the names of all the folders it has.
+            char folder_names[1024] = "";
+            struct dirent *de;
+            DIR *dr = opendir(".");
+            if (dr == NULL) {
+                printf("Could not open current directory\n\n" );
+                exit(1);
+            }
+            while ((de = readdir(dr)) != NULL) {
+                if (de->d_type == DT_DIR && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+                    strcat(folder_names, de->d_name);
+                    strcat(folder_names, ",");
+                }
+            }
+            closedir(dr);
+            printf("Folders on the server: %s\n\n", folder_names);
+            if(send(new_fd, folder_names, strlen(folder_names), 0) == -1) {
+                perror("send");
+            }
 
+            printf("\tNow listening for incoming messages...\n\n");
+            while(1) {
+                // Step 3. The server receives/parses either of the following messages:
+                //  “access foldername”, “download foldername”, “create foldername”, “delete foldername”
                 if((numbytes = recv(new_fd, buf, 99, 0)) == -1) {
                     perror("recv");
                     exit(1);
                 }
                 buf[numbytes] = '\0';
-
                 printf("\tReceived the following message from client:\n\n");
                 printf("\t\t\"%s\"\n\n", buf);
 
-                if(strlen(buf) == 0 || strcmp(buf, ";;;") == 0)
-                    break;
+                if(strlen(buf) == 0 || strcmp(buf, "exit") == 0) break;
 
-                printf("\tNow sending message %d back having changed the string to upper case...\n\n", num_message);
-                
+                printf("\tNow sending parsed string back...\n\n");
                 for (int i = 0; i < strlen(buf); i++) {
-                    buf[i] = toupper(buf[i]);
+                    buf[i] = toupper(buf[i]); //parse here instead
                 }
                 if(send(new_fd, buf, strlen(buf), 0) == -1) {
                     perror("send");
                 }
             }
-
             printf("\tClient finished, now waiting to service another client...\n\n");
             printf("****************************************************\n\n");
             close(new_fd);
             exit(0);
         }
-        
-        //waitpid(pid, &status, 0);
         close(new_fd); //parent doesn't need this
     }
 
