@@ -117,17 +117,19 @@ int main(int argc, char *argv[]) {
         printf("\t\t\"%s\"\n\n", cmd);
 
         if(strcmp(cmd, "access") == 0) {
-            // Step 3a.
+            // Step 3a. 
             accessFolder(sockfd, folder_name);
         }
-        if(strcmp(cmd, "download") == 0) {
+        else if(strcmp(cmd, "download") == 0) {
             // Step 3b. 
         }
-        if(strcmp(cmd, "create") == 0) {
-            // Step 3c. 
+        else if(strcmp(cmd, "create") == 0) {
+            // Step 3c. Done
         }
-        if(strcmp(cmd, "delete") == 0) {
-            // Step 3d. 
+        else if(strcmp(cmd, "delete") == 0) {
+            // Step 3d. Done
+        } else {
+            printf("Please use commands: access, download, create, and delete.\n");
         }
     }
 
@@ -197,20 +199,26 @@ void accessFolder(int sockfd, char* folder_name) {
             exit(1);
         }
         cmd[numbytes] = '\0';
-        printf("\tReceived response from server of\n\n");
+        printf("\tReceived response from server of\n");
         printf("\t\t\"%s\"\n\n", cmd);
 
         if(strcmp(cmd, "access") == 0) {
             // Step 5a.
         }
-        if(strcmp(cmd, "download") == 0) {
+        else if(strcmp(cmd, "download") == 0) {
             // Step 5b. 
         }
-        if(strcmp(cmd, "upload") == 0) {
+        else if(strcmp(cmd, "upload") == 0) {
             // Step 5c. 
         }
-        if(strcmp(cmd, "delete") == 0) {
+        else if(strcmp(cmd, "delete") == 0) {
             // Step 5d. 
+        }
+        else if(strcmp(cmd, "back") == 0) {
+            // Step 5e. The client returns to step 2. DONE
+            break;
+        } else {
+            printf("Please use commands: access, download, upload, and delete.\n");
         }
     }
     return;

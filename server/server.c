@@ -192,29 +192,29 @@ int main(int argc, char *argv[]) {
                 }
 
                 if(strcmp(cmd, "access") == 0) {
-                    // Step 3a. HAS NOT BEEN TESTED
+                    // Step 3a. The server continues to step 4. DONE
                     accessFolder(new_fd, foldername);
                 }
                 else if(strcmp(cmd, "download") == 0) {
-                    // Step 3b. HAS NOT BEEN TESTED
+                    // Step 3b. The server sends all files that are in the folder. DONE
                     downloadFolder(new_fd, foldername);
                 }
                 else if(strcmp(cmd, "create") == 0) {
-                    // Step 3c.
+                    // Step 3c. The server creates the folder. DONE
                     if (mkdir(foldername, 0777) != 0) {
                         printf("Error: could not create folder '%s'\n\n", foldername);
                     }
                     printf("Folder '%s' created successfully.\n\n", foldername);
                 }
                 else if(strcmp(cmd, "delete") == 0) {
-                    // Step 3d. 
+                    // Step 3d. The server deletes the folder. DONE
                     if (rmdir(foldername) != 0) {
                         printf("Error: could not delete folder '%s'\n\n", foldername);
                     } else {
                         printf("Folder '%s' deleted successfully\n\n", foldername);
                     }
                 } else {
-                    printf("Please use commands: access, download, create, and delete.");
+                    printf("Please use commands: access, download, create, and delete.\n");
                 }
             }
             printf("\tClient finished, now waiting to service another client...\n\n");
@@ -287,68 +287,139 @@ void accessFolder(int new_fd, char* foldername) {
         printf("cmd: %s\n", cmd);
         printf("file: %s\n", filename);
 
+        char path[256] = "./";
+        strcat(path, foldername);
+        strcat(path, "/");
+        strcat(path, filename);
+        printf("path: %s\n", path);
+
         printf("\tNow sending parsed string back...\n\n");
         if(send(new_fd, cmd, strlen(cmd), 0) == -1) {
             perror("send");
         }
 
         if(strcmp(cmd, "access") == 0) {
-            // Step 3a. 
+            // Step 5a. The server sends the file. DONE
+            FILE *fp = fopen(path, "rb");
+            for (;;) {
+                unsigned char download[1024]={0};
+                int nread = fread(download,1,1024,fp);
+                if(nread > 0) {
+                    write(new_fd, download, nread);
+                }
+                if (nread < 1024) {
+                    if (feof(fp))
+                        printf("    file transfer of %d bytes to server complete and placed in %s\n", nread, foldername);
+                    if (ferror(fp)) {
+                        perror("read");
+                    }
+                    break;
+                }
+            }
+            fclose(fp);
         }
         else if(strcmp(cmd, "download") == 0) {
-            // Step 3b. 
+            // Step 5b. The server sends the file. DONE
+            FILE *fp = fopen(path, "rb");
+            for (;;) {
+                unsigned char download[1024]={0};
+                int nread = fread(download,1,1024,fp);
+                if(nread > 0) {
+                    write(new_fd, download, nread);
+                }
+                if (nread < 1024) {
+                    if (feof(fp))
+                        printf("    file transfer of %d bytes to server complete and placed in %s\n", nread, foldername);
+                    if (ferror(fp)) {
+                        perror("read");
+                    }
+                    break;
+                }
+            }
+            fclose(fp);
         }
         else if(strcmp(cmd, "upload") == 0) {
-            // Step 3c. 
+            // Step 5c. The server recieves and saves the file. DONE
+            FILE *fp = fopen(path, "ab");
+            if(fp == NULL) {
+                perror("open file");
+                exit(1);
+            }
+            int bytesReceived = 0;
+            int totalBytes = 0;
+            char upload[1024];
+            memset(upload, '0', sizeof(upload));
+            while((bytesReceived = read(new_fd, upload, 1024)) > 0) {
+                fwrite(upload, 1, bytesReceived, fp);
+                totalBytes += bytesReceived;
+                if(bytesReceived < 1024) break;
+            }
+            printf("    file transfer of %d bytes complete and placed in %s\n",totalBytes, foldername);
+            if(bytesReceived < 0) {
+                perror("read");
+                exit(1);
+            }
+            fclose(fp);
         }
         else if(strcmp(cmd, "delete") == 0) {
-            // Step 3d. 
-            char path[256] = "./";
-            strcat(path, foldername);
-            strcat(path, "/");
-            strcat(path, filename);
-            printf("path: %s\n", path);
+            // Step 5d. The server deletes the file. DONE
             if(remove(path) != 0) {
                 printf("Error deleting file: '%s'\n\n", filename);
             } else {
                 printf("File '%s' deleted successfully\n\n", filename);
             }
-        } else {
-            printf("Please use commands: access, download, upload, and delete.");
+        } else if (strcmp(cmd, "back") == 0) {
+            // Step 5e. The server return to step 2. DONE
+            break;
+        }
+        else {
+            printf("Please use commands: access, download, upload, and delete.\n");
         }
     }
     return;
 }
 
 void downloadFolder(int new_fd, char* foldername) {
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir(foldername)) == NULL) {
-        perror("opendir failed");
-        exit(EXIT_FAILURE);
+    char file_names[1024] = "";
+    struct dirent *de;
+    DIR *dr = opendir(foldername);
+    if (dr == NULL) {
+        printf("Could not open current directory\n\n" );
+        exit(1);
     }
-
-    // Read the folder and send each file to the client
-    while ((ent = readdir(dir)) != NULL) {
-        if (ent->d_name[0] == '.') {
-            // Skip hidden files
-            continue;
+    while ((de = readdir(dr)) != NULL) {
+        if (de->d_type == DT_REG && strcmp(de->d_name, ".") != 0 && strcmp(de->d_name, "..") != 0) {
+            char path[256] = "./";
+            strcat(path, foldername);
+            strcat(path, "/");
+            strcat(path, de->d_name);
+            printf("path: %s\n", path);
+            FILE *fp = fopen(path, "rb");
+            if(fp == NULL) {
+                printf("File '%s' could not be found.\n", de->d_name);
+                closedir(dr);
+                fclose(fp);
+            }
+            printf("    file transfer started...\n");
+            for (;;) {
+                unsigned char buf[1024]={0};
+                int nread = fread(buf,1,1024,fp);
+                if(nread > 0) {
+                    write(new_fd, buf, nread);
+                }
+                if (nread < 1024) {
+                    if (feof(fp))
+                        printf("    file transfer of %d bytes to server complete.\n", nread);
+                    if (ferror(fp)) {
+                        perror("read");
+                    }
+                    break;
+                }
+            }
+            fclose(fp);
         }
-        char filepath[1024];
-        snprintf(filepath, sizeof(filepath), "%s/%s", foldername, ent->d_name);
-        int fd = open(filepath, O_RDONLY);
-        if (fd < 0) {
-            perror("open failed");
-            exit(EXIT_FAILURE);
-        }
-
-        // Send the file to the client
-        off_t offset = 0;
-        struct stat file_stat;
-        fstat(fd, &file_stat);
-        sendfile(new_fd, fd, &offset, file_stat.st_size);
-
-        close(fd);
     }
+    closedir(dr);
     return;
 }
+
