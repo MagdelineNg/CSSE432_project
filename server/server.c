@@ -229,6 +229,7 @@ int main(int argc, char *argv[]) {
 }
 
 void accessFolder(int new_fd, char* foldername) {
+    //Step 4. The server sends the names of all the files in the folder.
     char file_names[1024] = "";
     struct dirent *de;
     DIR *dr = opendir(foldername);
@@ -252,8 +253,8 @@ void accessFolder(int new_fd, char* foldername) {
     char buf[1024];
     int numbytes;
     while(1) {
-        // Step 3. The server receives/parses either of the following messages:
-        //  “access foldername”, “download foldername”, “create foldername”, “delete foldername”
+        // Step 5. The server receives/parses either of the following messages:
+        //  “access filename”, “download filename”, "upload filename”, “delete filename”
         if((numbytes = recv(new_fd, buf, 99, 0)) == -1) {
             perror("recv");
             exit(1);
@@ -284,7 +285,7 @@ void accessFolder(int new_fd, char* foldername) {
         filename[j] = '\0';
 
         printf("cmd: %s\n", cmd);
-        printf("folder: %s\n", filename);
+        printf("file: %s\n", filename);
 
         printf("\tNow sending parsed string back...\n\n");
         if(send(new_fd, cmd, strlen(cmd), 0) == -1) {
@@ -302,10 +303,11 @@ void accessFolder(int new_fd, char* foldername) {
         }
         else if(strcmp(cmd, "delete") == 0) {
             // Step 3d. 
-            char path[256] = "/";
+            char path[256] = "./";
             strcat(path, foldername);
             strcat(path, "/");
             strcat(path, filename);
+            printf("path: %s\n", path);
             if(remove(path) != 0) {
                 printf("Error deleting file: '%s'\n\n", filename);
             } else {

@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 
 bool readLine(char** line, size_t* size, size_t* length);
+void accessFolder(int sockfd, char* foldername);
 
 //get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa) {
@@ -86,6 +87,7 @@ int main(int argc, char *argv[]) {
     int j = 0;
     for(int i = 0; i < strlen(folder_names); i++) {
         if(folder_names[i] == ',') {
+            folder_name[i] = '\0';
             printf("\t\t%s\n", folder_name);
             folder_name[0] = '\0';
             j = 0;
@@ -115,7 +117,8 @@ int main(int argc, char *argv[]) {
         printf("\t\t\"%s\"\n\n", cmd);
 
         if(strcmp(cmd, "access") == 0) {
-            // Step 3a. 
+            // Step 3a.
+            accessFolder(sockfd, folder_name);
         }
         if(strcmp(cmd, "download") == 0) {
             // Step 3b. 
@@ -150,4 +153,65 @@ bool readLine(char** line, size_t* size, size_t* length) {
         if(len == 0) continue;
         return (strcmp(*line, "exit") != 0) && len > 0;
     }
+}
+
+void accessFolder(int sockfd, char* folder_name) {
+    // Step 4. The client receives the names of all the files in the folder.
+    int numbytes;
+    char file_names[1024];
+    if((numbytes = recv(sockfd, file_names, 99, 0)) == -1) {
+        perror("recv");
+        exit(1);
+    }
+    file_names[numbytes] = '\0';
+    printf("\tFiles in folder: %s\n", folder_name);
+    char file_name[1024];
+    int j = 0;
+    for(int i = 0; i < strlen(file_names); i++) {
+        if(file_names[i] == ',') {
+            file_name[i] = '\0';
+            printf("\t\t%s\n", file_name);
+            file_name[0] = '\0';
+            j = 0;
+            i++;
+        }
+        file_name[j] = file_names[i];
+        j++;
+    }
+    char* line = NULL;
+    size_t size = 0;
+    size_t len;
+    while(readLine(&line, &size, &len)) {
+        printf("\n");
+
+        // Step 3. The client sends the server either of the following messages:
+        //  “access filename", “download filename", “upload filename", “delete filename"
+        if(send(sockfd, line, len, 0) == -1) {
+            perror("send");
+        }
+
+        //  recv parsed cmd
+        char cmd[1024];
+        if((numbytes = recv(sockfd, cmd, 99, 0)) == -1) {
+            perror("recv");
+            exit(1);
+        }
+        cmd[numbytes] = '\0';
+        printf("\tReceived response from server of\n\n");
+        printf("\t\t\"%s\"\n\n", cmd);
+
+        if(strcmp(cmd, "access") == 0) {
+            // Step 5a.
+        }
+        if(strcmp(cmd, "download") == 0) {
+            // Step 5b. 
+        }
+        if(strcmp(cmd, "upload") == 0) {
+            // Step 5c. 
+        }
+        if(strcmp(cmd, "delete") == 0) {
+            // Step 5d. 
+        }
+    }
+    return;
 }
