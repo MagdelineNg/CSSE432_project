@@ -106,30 +106,43 @@ int main(int argc, char *argv[]) {
             perror("send");
         }
 
-        //  recv parsed cmd
-        char cmd[1024];
-        if((numbytes = recv(sockfd, cmd, 99, 0)) == -1) {
-            perror("recv");
-            exit(1);
+        char cmd[15];
+        char foldername[256];
+        int j = 0;
+        int atFolderName = 0;
+        for(int i = 0; i < strlen(line); i++) {
+            if(line[i] == ' ') {
+                atFolderName = 1;
+                cmd[i] = '\0';
+            }
+            else if(atFolderName == 1) {
+                foldername[j] = line[i];
+                j++;
+            }
+            else cmd[i] = line[i];
+            
         }
-        cmd[numbytes] = '\0';
-        printf("\tReceived response from server of\n\n");
-        printf("\t\t\"%s\"\n\n", cmd);
+        foldername[j] = '\0';
+
+        printf("\t\tcmd: %s\n", cmd);
+        printf("\t\tfolder: %s\n", foldername);
 
         if(strcmp(cmd, "access") == 0) {
-            // Step 3a. 
-            accessFolder(sockfd, folder_name);
+            // Step 3a. The client continues to step 4. DONE
+            accessFolder(sockfd, foldername);
         }
         else if(strcmp(cmd, "download") == 0) {
-            // Step 3b. 
+            // Step 3b. The client receives and saves all files that are in the folder.
         }
         else if(strcmp(cmd, "create") == 0) {
-            // Step 3c. Done
+            // Step 3c. Do nothing. DONE
+            printf("\t\tFolder has been created.\n\n");
         }
         else if(strcmp(cmd, "delete") == 0) {
-            // Step 3d. Done
+            // Step 3d. Do nothing. DONE
+            printf("\t\tFolder has been deleted.\n\n");
         } else {
-            printf("Please use commands: access, download, create, and delete.\n");
+            printf("\t\tPlease use commands: access, download, create, and delete.\n");
         }
     }
 
@@ -166,7 +179,7 @@ void accessFolder(int sockfd, char* folder_name) {
         exit(1);
     }
     file_names[numbytes] = '\0';
-    printf("\tFiles in folder: %s\n", folder_name);
+    printf("\tFiles in '%s':\n", folder_name);
     char file_name[1024];
     int j = 0;
     for(int i = 0; i < strlen(file_names); i++) {
@@ -192,33 +205,111 @@ void accessFolder(int sockfd, char* folder_name) {
             perror("send");
         }
 
-        //  recv parsed cmd
-        char cmd[1024];
-        if((numbytes = recv(sockfd, cmd, 99, 0)) == -1) {
-            perror("recv");
-            exit(1);
+        char cmd[15];
+        char filename[256];
+        int j = 0;
+        int atFileName = 0;
+        for(int i = 0; i < strlen(line); i++) {
+            if(line[i] == ' ') {
+                atFileName = 1;
+                cmd[i] = '\0';
+            }
+            else if(atFileName == 1) {
+                filename[j] = line[i];
+                j++;
+            }
+            else cmd[i] = line[i];
+            
         }
-        cmd[numbytes] = '\0';
-        printf("\tReceived response from server of\n");
-        printf("\t\t\"%s\"\n\n", cmd);
+        filename[j] = '\0';
+
+        printf("\t\tcmd: %s\n", cmd);
+        printf("\t\tfile: %s\n", filename);
 
         if(strcmp(cmd, "access") == 0) {
-            // Step 5a.
+            // Step 5a. The client receives and presents the file.
+            char path[256] = "./";
+            strcat(path, filename);
+            printf("\t\tpath: %s\n", path);
+            FILE *fp = fopen(path, "ab");
+            if(fp == NULL) {
+                perror("open file");
+                exit(1);
+            }
+            int bytesReceived = 0;
+            int totalBytes = 0;
+            char upload[1024];
+            memset(upload, '0', sizeof(upload));
+            while((bytesReceived = read(sockfd, upload, 1024)) > 0) {
+                fwrite(upload, 1, bytesReceived, fp);
+                totalBytes += bytesReceived;
+                if(bytesReceived < 1024) break;
+            }
+            printf("    file transfer of %d bytes complete and placed in %s\n",totalBytes, folder_name);
+            if(bytesReceived < 0) {
+                perror("read");
+                exit(1);
+            }
+            fclose(fp);
         }
         else if(strcmp(cmd, "download") == 0) {
-            // Step 5b. 
+            // Step 5b. The client receives and saves the file.
+            char path[256] = "./";
+            strcat(path, filename);
+            printf("\t\tpath: %s\n", path);
+            FILE *fp = fopen(path, "ab");
+            if(fp == NULL) {
+                perror("open file");
+                exit(1);
+            }
+            int bytesReceived = 0;
+            int totalBytes = 0;
+            char upload[1024];
+            memset(upload, '0', sizeof(upload));
+            while((bytesReceived = read(sockfd, upload, 1024)) > 0) {
+                fwrite(upload, 1, bytesReceived, fp);
+                totalBytes += bytesReceived;
+                if(bytesReceived < 1024) break;
+            }
+            printf("    file transfer of %d bytes complete and placed in current directory\n",totalBytes);
+            if(bytesReceived < 0) {
+                perror("read");
+                exit(1);
+            }
+            fclose(fp);
         }
         else if(strcmp(cmd, "upload") == 0) {
-            // Step 5c. 
+            // Step 5c. The client sends the file they want to upload.
+            char path[256] = "./";
+            strcat(path, filename);
+            printf("\t\tpath: %s\n", path);
+            FILE *fp = fopen(path, "rb");
+            for (;;) {
+                unsigned char download[1024]={0};
+                int nread = fread(download,1,1024,fp);
+                if(nread > 0) {
+                    write(sockfd, download, nread);
+                }
+                if (nread < 1024) {
+                    if (feof(fp))
+                        printf("    file transfer of %d bytes to server complete and placed in %s\n", nread, folder_name);
+                    if (ferror(fp)) {
+                        perror("read");
+                    }
+                    break;
+                }
+            }
+            fclose(fp);
         }
         else if(strcmp(cmd, "delete") == 0) {
-            // Step 5d. 
+            // Step 5d. Do nothing. DONE
+            printf("\t\tFile has been deleted.\n\n");
         }
         else if(strcmp(cmd, "back") == 0) {
             // Step 5e. The client returns to step 2. DONE
             break;
         } else {
-            printf("Please use commands: access, download, upload, and delete.\n");
+            printf("\t\tPlease use commands: access, download, upload, and delete.\n");
         }
     }
     return;

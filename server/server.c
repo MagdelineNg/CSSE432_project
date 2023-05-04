@@ -164,7 +164,6 @@ int main(int argc, char *argv[]) {
 
                 if(strlen(buf) == 0 || strcmp(buf, "exit") == 0) break;
 
-
                 char cmd[15];
                 char foldername[256];
                 int j = 0;
@@ -185,11 +184,6 @@ int main(int argc, char *argv[]) {
 
                 printf("cmd: %s\n", cmd);
                 printf("folder: %s\n", foldername);
-
-                printf("\tNow sending parsed string back...\n\n");
-                if(send(new_fd, cmd, strlen(cmd), 0) == -1) {
-                    perror("send");
-                }
 
                 if(strcmp(cmd, "access") == 0) {
                     // Step 3a. The server continues to step 4. DONE
@@ -245,6 +239,7 @@ void accessFolder(int new_fd, char* foldername) {
     }
     closedir(dr);
     printf("Files in %s: %s\n\n", foldername, file_names);
+    if(strlen(file_names)==0) strcat(file_names, "empty");
     if(send(new_fd, file_names, strlen(file_names), 0) == -1) {
         perror("send");
     }
@@ -292,11 +287,6 @@ void accessFolder(int new_fd, char* foldername) {
         strcat(path, "/");
         strcat(path, filename);
         printf("path: %s\n", path);
-
-        printf("\tNow sending parsed string back...\n\n");
-        if(send(new_fd, cmd, strlen(cmd), 0) == -1) {
-            perror("send");
-        }
 
         if(strcmp(cmd, "access") == 0) {
             // Step 5a. The server sends the file. DONE
