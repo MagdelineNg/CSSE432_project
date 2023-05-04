@@ -12,6 +12,7 @@
 #include <arpa/inet.h> 
 #include <ctype.h>
 #include <dirent.h>
+#include <sys/stat.h>
 
 #define BACKLOG 10 //how many pending connections queue will hold
 
@@ -158,12 +159,54 @@ int main(int argc, char *argv[]) {
 
                 if(strlen(buf) == 0 || strcmp(buf, "exit") == 0) break;
 
-                printf("\tNow sending parsed string back...\n\n");
-                for (int i = 0; i < strlen(buf); i++) {
-                    buf[i] = toupper(buf[i]); //parse here instead
+
+                char cmd[15];
+                char foldername[256];
+                int j = 0;
+                int atFolderName = 0;
+                for(int i = 0; i < strlen(buf); i++) {
+                    if(buf[i] == ' ') {
+                        atFolderName = 1;
+                        cmd[i] = '\0';
+                    }
+                    else if(atFolderName == 1) {
+                        foldername[j] = buf[i];
+                        j++;
+                    }
+                    else cmd[i] = buf[i];
+                    
                 }
-                if(send(new_fd, buf, strlen(buf), 0) == -1) {
+                foldername[j] = '\0';
+
+                printf("cmd: %s\n", cmd);
+                printf("folder: %s\n", foldername);
+
+                printf("\tNow sending parsed string back...\n\n");
+                if(send(new_fd, cmd, strlen(cmd), 0) == -1) {
                     perror("send");
+                }
+
+                if(strcmp(cmd, "access") == 0) {
+                    // Step 3a. 
+                }
+                if(strcmp(cmd, "download") == 0) {
+                    // Step 3b. 
+                }
+                if(strcmp(cmd, "create") == 0) {
+                    // Step 3c.
+                    if (mkdir(foldername, 0777) != 0) {
+                        printf("Error creating directory!\n\n");
+                        return 1;
+                    }
+                    printf("Directory created successfully.\n\n");
+                }
+                if(strcmp(cmd, "delete") == 0) {
+                    // Step 3d. 
+                    if (rmdir(foldername) != 0) {
+                        printf("Error: could not delete folder '%s'\n", foldername);
+                    } else {
+                        printf("Folder '%s' deleted successfully\n", foldername);
+                    }
                 }
             }
             printf("\tClient finished, now waiting to service another client...\n\n");
