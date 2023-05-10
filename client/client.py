@@ -45,25 +45,27 @@ def client_program():
 
                 if cmd == 'access': # Access File
                     print('\tAccess has not been implemented.')
-                elif cmd == 'download': # Download File : Done
+                elif cmd == 'download': # Download File
                     print('What directory would you like to save to?')
-                    path = input(" -> ")
-                    path = path.lower().strip()
-                    path = path + file
-                    with open(path, "wb") as file:
+                    file_path = input(" -> ")
+                    file_path = file_path.lower().strip()
+                    file_path = file_path + file
+                    with open(file_path, "wb") as f:
                         while True:
                             data = client_socket.recv(1024)
                             if not data: break
-                            file.write(data)
+                            f.write(data)
+                            if len(data) < 1024: break
                     print('\tFile has been downloaded.')
-                elif cmd == 'upload': # Upload File
+                elif cmd == 'upload': # Upload File: Done
                     file_path = './' + file
                     try:
-                        with open(file_path, "rb") as file:
+                        with open(file_path, "rb") as f:
                             while True:
-                                data = file.read(1024)
+                                data = f.read(1024)
                                 if not data: break
                                 client_socket.sendall(data)
+                                if len(data) < 1024: break
                     except FileNotFoundError:
                         print('\tFile does not exist.')
                     print('\tFile has been uploaded.')
