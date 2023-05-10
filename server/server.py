@@ -46,9 +46,9 @@ def server_program():
 
             if cmd == 'access': # Access Folder
                 while True:
-                    path = os.path.join(os.getcwd(), folder)
-                    dir_contents = os.listdir(path)
-                    files = [d for d in dir_contents if os.path.isfile(os.path.join(path, d))]
+                    folder_path = os.path.join(os.getcwd(), folder)
+                    dir_contents = os.listdir(folder_path)
+                    files = [d for d in dir_contents if os.path.isfile(os.path.join(folder_path, d))]
                     files = '\n'.join(files)
                     if len(files) == 0: files = 'empty'
                     conn.sendall(files.encode())  # send files to the client
@@ -62,24 +62,25 @@ def server_program():
                     if cmd == 'access': # Access File
                         print('\tAccess has not been implemented.')
                     elif cmd == 'download': # Download File
-                        file_path = os.path.join(path, file)
-                        with open(file_path, "rb") as file:
+                        file_path = folder + '/' + file
+                        with open(file_path, "rb") as f:
                             while True:
-                                data = file.read(1024)
+                                data = f.read(1024)
                                 if not data: break
                                 conn.sendall(data)
                         print('\tFile was sent.')
-                    elif cmd == 'upload': #Upload File
-                        file_path = os.path.join(path, file)
-                        with open(path, "wb") as file:
+                    elif cmd == 'upload': #Upload File: Done
+                        file_path = folder + '/' + file
+                        with open(file_path, "wb") as f:
                             while True:
                                 data = conn.recv(1024)
                                 if not data: break
-                                file.write(data)
+                                f.write(data)
+                                if len(data) < 1024: break
                         print('\tFile was uploaded.')
                     elif cmd == 'delete': #Delete File: Done
-                        file_path = os.path.join(path, file)
-                        os.remove(path)
+                        file_path = os.path.join(folder_path, file)
+                        os.remove(folder_path)
                         print('\tFile was deleted.')
                     else: print('\tPlease use commands: access, download, upload, and delete.')
             elif cmd == 'download': #Download Folder: Done
@@ -90,12 +91,12 @@ def server_program():
                             tar.add(file_path)
                 print('\tFolder was sent.')
             elif cmd == 'create': #Create Folder: Done
-                path = os.path.join(os.getcwd(), folder)
-                os.makedirs(path)
+                folder_path = os.path.join(os.getcwd(), folder)
+                os.makedirs(folder_path)
                 print('\tFolder was created.')
             elif cmd == 'delete': # Delete Folder: Done
-                path = os.path.join(os.getcwd(), folder)
-                os.rmdir(path)
+                folder_path = os.path.join(os.getcwd(), folder)
+                os.rmdir(folder_path)
                 print('\tFolder was deleted.')
             else: print('\tPlease use commands: access, download, create, and delete.')
 
