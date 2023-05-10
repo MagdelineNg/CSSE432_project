@@ -68,6 +68,7 @@ def server_program():
                                 data = f.read(1024)
                                 if not data: break
                                 conn.sendall(data)
+                                if len(data) < 1024: break
                         print('\tFile was sent.')
                     elif cmd == 'upload': #Upload File: Done
                         file_path = folder + '/' + file

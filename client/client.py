@@ -65,6 +65,7 @@ def client_program():
                                 data = f.read(1024)
                                 if not data: break
                                 client_socket.sendall(data)
+                                if len(data) < 1024: break
                     except FileNotFoundError:
                         print('\tFile does not exist.')
                     print('\tFile has been uploaded.')
