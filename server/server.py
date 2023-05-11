@@ -60,7 +60,15 @@ def server_program():
                     file = message[message.index(" ") + 1:]
 
                     if cmd == 'access': # Access File
-                        print('\tAccess has not been implemented.')
+                        file_path = folder + '/' + file
+                        with open(file_path, "rb") as f:
+                            while True:
+                                data = f.read(1024)
+                                if not data: break
+                                conn.sendall(data)
+                                if len(data) < 1024: break
+                        print('\tFile was sent.')
+                        conn.recv(1024)
                     elif cmd == 'download': # Download File
                         file_path = folder + '/' + file
                         with open(file_path, "rb") as f:
