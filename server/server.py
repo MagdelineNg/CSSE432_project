@@ -82,7 +82,7 @@ def server_program():
                         print('\tFile was uploaded.')
                     elif cmd == 'delete': #Delete File: Done
                         file_path = os.path.join(folder_path, file)
-                        os.remove(folder_path)
+                        os.remove(file_path)
                         print('\tFile was deleted.')
                     else: print('\tPlease use commands: access, download, upload, and delete.')
             elif cmd == 'download': #Download Folder: Done
