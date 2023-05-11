@@ -14,7 +14,6 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <sys/sendfile.h>
 
 #define BACKLOG 10 //how many pending connections queue will hold
 
