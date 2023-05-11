@@ -1,6 +1,7 @@
 import socket
 import sys
 import tarfile
+import io
 
 
 def client_program():
@@ -44,7 +45,18 @@ def client_program():
                 file = message[message.index(" ") + 1:]
 
                 if cmd == 'access': # Access File
-                    print('\tAccess has not been implemented.')
+                    buffer = io.BytesIO()
+                    while True:
+                        data = client_socket.recv(1024)
+                        if not data: break
+                        buffer.write(data)
+                        if len(data) < 1024: break
+                    data_bytes = buffer.getvalue()
+                    data_str = data_bytes.decode()
+                    print(data_str)
+                    print('\tFile has been downloaded.')
+                    done = "done"
+                    client_socket.send(done.encode())
                 elif cmd == 'download': # Download File
                     print('What directory would you like to save to?')
                     file_path = input(" -> ")
