@@ -57,6 +57,8 @@ def client_program():
                             f.write(data)
                             if len(data) < 1024: break
                     print('\tFile has been downloaded.')
+                    done = "done"
+                    client_socket.send(done.encode())
                 elif cmd == 'upload': # Upload File: Done
                     file_path = './' + file
                     try:
