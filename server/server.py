@@ -70,6 +70,7 @@ def server_program():
                                 conn.sendall(data)
                                 if len(data) < 1024: break
                         print('\tFile was sent.')
+                        conn.recv(1024)
                     elif cmd == 'upload': #Upload File: Done
                         file_path = folder + '/' + file
                         with open(file_path, "wb") as f:
@@ -81,7 +82,7 @@ def server_program():
                         print('\tFile was uploaded.')
                     elif cmd == 'delete': #Delete File: Done
                         file_path = os.path.join(folder_path, file)
-                        os.remove(folder_path)
+                        os.remove(file_path)
                         print('\tFile was deleted.')
                     else: print('\tPlease use commands: access, download, upload, and delete.')
             elif cmd == 'download': #Download Folder: Done
