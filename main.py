@@ -11,6 +11,8 @@ root.title("Shared Folder")
 root.geometry("450x560+500+200")
 root.configure(bg="#f4fdfe")
 root.resizable(False,False)
+global port
+port = 9000
 
 def receive_option():
     # Load and resize receive icons
@@ -91,6 +93,25 @@ def folder_clicked(event):
     folder_name = event.widget.cget("text")
     display_files(folder_name)
 
+def get_client_folders():
+    host = socket.gethostname()
+    print("Client has requested to start connection with host " + host + " on port " + str(port) + "\n")
+    print("server_adr: ", socket.gethostbyname("localhost"))
+
+    server_addr = (socket.gethostbyname(host), port)
+
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # instantiate
+    client_socket.connect(server_addr)  # connect to the server
+
+    print("client is connected to server")
+
+    while True: 
+        folders = client_socket.recv(1024).decode()  # receive folders from server
+        folders = folders.split('\n')
+        print('get_client_folders: Folders found: ' + ', '.join(folders))
+
+    client_socket.close()  # close the connection
+
 #Handle send function
 def Send():
     window = Toplevel(root)
@@ -114,6 +135,8 @@ def Send():
     file_frame = LabelFrame(top_frame,background="#f4fdfe")
     file_frame.pack(expand=False, fill=BOTH)
 
+    get_client_folders()
+
     #display all folders
     folder1 = Label(file_frame, text="Folder 1", background="#f4fdfe", cursor="arrow", anchor=tkinter.W)
     # Bind the label to a click event
@@ -133,26 +156,12 @@ def Send():
 
     upload_option(window, "Create folder")
 
-# def Receive():
-#     window = Toplevel(root)
-#     window.title("Receive")
-#     window.geometry("450x560+500+200")
-#     window.configure(bg="#f4fdfe")
-#     window.resizable(False,False)
-
-#     window.grid_rowconfigure(0, weight=1)
-#     window.grid_columnconfigure(0, weight=1)
-
-#     create_folder_icon = Button(window, text="Create folder",width=10,height=4,font='arial 14 bold',bg="#fff", fg="#000", pady=5, padx=15)
-#     # create_folder_icon.pack(side=tkinter.BOTTOM)
-#     create_folder_icon.grid(row=1, column=1)
-
-#     window.mainloop()
-
-#icons
+#main
+#welcome page 
 app_icon = PhotoImage(file="./assets/icons/app.png")
 root.iconphoto(False, app_icon)
-Label(root, text="Folders", font=("TkSmallCaptionFont", 30, "bold"), bg="#f4fdfe").place(x=20,y=30)
+host = socket.gethostname()
+Label(root, text=f'Welcome, {host}', font=("TkSmallCaptionFont", 18, "bold"), bg="#f4fdfe").place(x=20,y=30)
 
 #send icon
 send_image = Image.open("./assets/icons/send.png")
@@ -169,6 +178,34 @@ send = Button(root, image=send_image,bd=0, bg="#f4fdfe", command=Send)
 send.place(x=50, y=100)
 Label(root, text="Folder", bg="#f4fdfe", font="bold").place(x=75, y=210)
 
+#init server socket
+host = socket.gethostname()
+host_ip = socket.gethostbyname(host)
+
+print("Serial Server on host " + str(host_ip) + " is listening on port " + str(port) + "\n")
+
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)  # get instance
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server_socket.bind(('', port)) 
+
+# configure how many client the server can listen simultaneously
+server_socket.listen(2)
+print("Serial Server starting, listening on port " + str(port) + "\n")
+
+while True: # keep looping looking for new clients when previous closes
+    root.mainloop()
+    conn, address = server_socket.accept()  # accept new connection
+    print("Received connection request from " + str(address) + "\n")
+    print("***********************************************************\n")
+    while True:
+        dir_contents = os.listdir(os.getcwd())
+        folders = [d for d in dir_contents if os.path.isdir(os.path.join(os.getcwd(), d))]
+        folders = '\n'.join(folders)
+        if len(folders) == 0: folders = 'empty'
+        conn.sendall(folders.encode())  # send folders to the client
+
+        print("\tNow listening for incoming messages...\n")
+
 #receive icon
 #Resize send icon
 # receive_image = Image.open("./assets/icons/receive.png")
@@ -180,6 +217,6 @@ Label(root, text="Folder", bg="#f4fdfe", font="bold").place(x=75, y=210)
 # receive.place(x=300, y=100)
 # Label(root, text="Receive", bg="#f4fdfe", font="bold").place(x=320, y=210)
 
-root.mainloop()
+
 
 
