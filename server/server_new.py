@@ -24,13 +24,6 @@ while True: # keep looping looking for new clients when previous closes
     print("Received connection request from " + str(address) + "\n")
     print("***********************************************************\n")
     while True:
-        #send all folders to client to display
-        dir_contents = os.listdir(os.getcwd())
-        folders = [d for d in dir_contents if os.path.isdir(os.path.join(os.getcwd(), d))]
-        folders = '\n'.join(folders)
-        if len(folders) == 0: folders = 'empty'
-        conn.sendall(folders.encode())  # send folders to the client
-
         print("\tNow listening for incoming messages...\n")
 
         message = conn.recv(1024).decode()
@@ -42,17 +35,28 @@ while True: # keep looping looking for new clients when previous closes
         folder = message[message.index(" ") + 1:]
         print("server recv folder: " + str(folder))
         
-        if cmd == "GET": 
+        if message == "GET FOLDERS":
+            #send all folders to client to display
+            dir_contents = os.listdir(os.getcwd())
+            folders = [d for d in dir_contents if os.path.isdir(os.path.join(os.getcwd(), d))]
+            folders = '\n'.join(folders)
+            if len(folders) == 0: folders = 'empty'
+            conn.sendall(folders.encode())  # send folders to the client
+
+            # dir_contents = os.listdir(os.getcwd())     
+            # folders = [d for d in dir_contents if os.path.isdir(os.path.join(dir_contents, d))]
+            # folders = '\n'.join(folders)
+            # print("server: all folders: ", folders)
+            # conn.sendall(folders.encode())  # send folders to the client
+        elif cmd == "GET":
             #send files in folder to client to display
             folder_path = os.path.join(os.getcwd(), folder)
             dir_contents = os.listdir(folder_path)
-            print("dir contents: ", dir_contents)
             files = [d for d in dir_contents if os.path.isfile(os.path.join(folder_path, d))]
             files = '\n'.join(files)
-            print("file contents: ", files)
-            print("server detected files: " + files + " in folder: " + folder_path)
+            print("server: detected files: " + files + " in folder: " + folder_path)
             if len(files) == 0: files = 'empty\n'
-            conn.sendall(files.encode())  # send files to the client
+            conn.sendall(files.encode())
         elif cmd == 'create': #Create Folder: Done
             folder_path = os.path.join(os.getcwd(), folder)
             os.makedirs(folder_path)

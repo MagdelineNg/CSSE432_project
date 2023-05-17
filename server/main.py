@@ -10,6 +10,7 @@ import os
 import threading
 import tarfile
 import sys
+import shutil
 
 root = Tk()
 root.title("Shared Folder")
@@ -79,7 +80,7 @@ def CreateFolder():
         input_window.destroy()
 
         #Add new folder window
-        Send(folders)
+        Send()
 
     # Create a label and entry for folder name input
     folder_name_label = tkinter.Label(input_window, text="Enter folder name:")
@@ -137,7 +138,7 @@ def display_files(folder_name):
     print("client send msg: " + message)
     client_socket.send(message.encode())  # send message, default encoding encoding="utf-8", errors="strict"
     
-    sleep(3)
+    sleep(1)
     
     files = client_socket.recv(1024).decode()  # receive files
     files = files.split('\n')
@@ -173,7 +174,7 @@ def display_files(folder_name):
         # TO ADD: click file to open
         indiv_file.grid(row=index, column=0, sticky="w")
 
-        receive_btn = tkinter.Button(file_frame, image=new_receive_image, anchor=tkinter.E)
+        receive_btn = tkinter.Button(file_frame, image=new_receive_image, anchor=tkinter.E, command=Download)
         receive_btn.configure(borderwidth=0, highlightthickness=0, relief="flat")
         #receive_btn.pack(side=tkinter.RIGHT)
         receive_btn.grid(row=index, column=1)
@@ -214,13 +215,41 @@ def Delete():
     print('\tFolder has been deleted.')
 
 #Handle download folder function
-def Download():
-    with tarfile.open(mode="r|", fileobj=client_socket.makefile("rb")) as tar:
-        tar.extractall()
+def Download(content_dir):
+    # with tarfile.open(mode="r|", fileobj=client_socket.makefile("rb")) as tar:
+    #     tar.extractall()
+    directory_path = filedialog.askdirectory()  # Open the file dialog to select a directory
+    if directory_path:
+        print("Selected directory:", directory_path)
+        print("Original directory:", content_dir)
+        # Check if the source is a file
+        if os.path.isfile(content_dir):
+            # Copy the file to the destination path
+            shutil.copy(content_dir, directory_path)
+            print("File downloaded successfully!")
+        elif os.path.isdir(content_dir):
+            # Copy the folder to the destination path
+            shutil.rmtree(directory_path)
+            shutil.copytree(content_dir, directory_path)
+            print("Folder downloaded successfully!")
+        else:
+            print("Invalid source path!")
+    else:
+        print("No directory selected.")
     print('\tFolder has been downloaded.')
 
 #Handle send function
-def Send(folders):
+def Send():
+    message= "GET FOLDERS"
+    client_socket.send(message.encode())  # send message, default encoding encoding="utf-8", errors="strict"
+
+    sleep(1)
+
+    folders = client_socket.recv(1024).decode()  # receive folders from server
+    folders = folders.split('\n')
+
+    print("folders: ", folders)
+    print("Send folders: ", folders)
     global window 
     window = Toplevel(root)
     window.title("Send")
@@ -271,7 +300,7 @@ def Send(folders):
 
         #receive_delete_option(file_frame)
        #new_rcv_img = receive_option()
-        receive_btn = tkinter.Button(file_frame, image=new_receive_image, anchor=tkinter.E, command=Download)
+        receive_btn = tkinter.Button(file_frame, image=new_receive_image, anchor=tkinter.E, command=lambda: Download(f))
         receive_btn.configure(borderwidth=0, highlightthickness=0, relief="flat")
         #receive_btn.pack(side=tkinter.RIGHT)
         receive_btn.grid(row=index, column=1)
@@ -350,7 +379,7 @@ resized_send = send_image.resize((100,100), Image.ANTIALIAS)
 
 send_image =ImageTk.PhotoImage(resized_send)
 
-send = Button(root, image=send_image,bd=0, bg="#f4fdfe", command=lambda: Send(folders))
+send = Button(root, image=send_image,bd=0, bg="#f4fdfe", command= Send)
 send.place(x=50, y=100)
 Label(root, text="Folder", bg="#f4fdfe", font="bold").place(x=75, y=210)
 
@@ -368,9 +397,9 @@ client_socket.connect(server_addr)  # connect to the server
 
 print("client is connected to server")
 
-folders = client_socket.recv(1024).decode()  # receive folders from server
-folders = folders.split('\n')
-print("folders: ", folders)
+# folders = client_socket.recv(1024).decode()  # receive folders from server
+# folders = folders.split('\n')
+# print("folders: ", folders)
 
 root.mainloop()
 
