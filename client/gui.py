@@ -8,6 +8,7 @@ from PIL import Image, ImageTk
 from pdf2image import convert_from_bytes
 import fitz
 from tkinter import ttk
+from docx import Document
 
 class FileShareApp(tk.Tk):
     def __init__(self, server_ip, port):
@@ -281,6 +282,8 @@ class SingleFileView(tk.Tk):
             self.render_text_file()
         elif file_extension == '.pdf':
             self.render_pdf_file()
+        elif file_extension == '.docx':
+            self.render_docx_file()
         elif file_extension == '.jpg' or file_extension == '.jpeg' or file_extension == '.png' or file_extension == '.gif' or file_extension == '.JPG':
             self.render_image_file()
         else:
@@ -308,6 +311,19 @@ class SingleFileView(tk.Tk):
         self.photo = ImageTk.PhotoImage(image)  # Store the photo as an attribute
         image_label = tk.Label(self, image=self.photo)
         image_label.pack()
+
+    def render_docx_file(self):
+        docx_data = b""
+        while True:
+            data = self.client_socket.recv(1024)
+            if not data: break
+            docx_data += data
+            if len(data) < 1024: break
+        doc = Document(io.BytesIO(docx_data))
+        text = [p.text for p in doc.paragraphs]
+        text_widget = tk.Text(self)
+        text_widget.insert(tk.END, "\n".join(text))
+        text_widget.pack()
 
     def render_pdf_file(self):
         pdf_data = b""
