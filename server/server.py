@@ -34,7 +34,7 @@ def server_program():
             dir_contents = os.listdir(os.getcwd())
             folders = [d for d in dir_contents if os.path.isdir(os.path.join(os.getcwd(), d))]
             folders = '\n'.join(folders)
-            if len(folders) == 0: folders = 'empty'
+            if len(folders) == 0: folders = 'empty\n'
             conn.sendall(folders.encode())  # send folders to the client
 
             print("\tNow listening for incoming messages...\n")
@@ -50,7 +50,7 @@ def server_program():
                     dir_contents = os.listdir(folder_path)
                     files = [d for d in dir_contents if os.path.isfile(os.path.join(folder_path, d))]
                     files = '\n'.join(files)
-                    if len(files) == 0: files = 'empty'
+                    if len(files) == 0: files = 'empty\n'
                     conn.sendall(files.encode())  # send files to the client
 
                     message = conn.recv(1024).decode()

@@ -1,3 +1,5 @@
+import select
+from time import sleep
 from tkinter import *
 import socket
 import tkinter
@@ -43,12 +45,71 @@ def delete_option():
     return new_delete_image
     #delete_btn.grid(row=0, column=2, sticky=tkinter.E)
 
-def upload_option(window, text):
+def CreateFolder():
+    #filename = filedialog.askopenfilename(initialdir=os.getcwd(), title="Select directory to create folder")
+
+    # Create a new window for folder name input
+    input_window = tkinter.Toplevel(root)
+
+    def create_new_folder():
+        # Get the entered folder name
+        folder_name = folder_name_entry.get()
+
+        # Create the full path for the new folder
+        new_folder_path = os.path.join(os.getcwd(), folder_name)
+
+        # Create the new folder
+        os.makedirs(new_folder_path)
+
+        current_directory = os.getcwd()
+
+        # Get all items (files and directories) in the current directory
+        items = os.listdir(current_directory)
+
+        # Filter out the directories from the list of items
+        folders = [item for item in items if os.path.isdir(os.path.join(current_directory, item))]
+
+        print(f"New folder created at: {new_folder_path}")
+
+        #close previous folder window
+        global window
+        window.destroy()
+
+        #Close the input window
+        input_window.destroy()
+
+        #Add new folder window
+        Send(folders)
+
+    # Create a label and entry for folder name input
+    folder_name_label = tkinter.Label(input_window, text="Enter folder name:")
+    folder_name_label.pack()
+
+    folder_name_entry = tkinter.Entry(input_window)
+    folder_name_entry.pack()
+
+    # Create a button to create the new folder
+    create_button = tkinter.Button(input_window, text="Create Folder", command=create_new_folder)
+    create_button.pack()
+ 
+
+def upload_folder(window):
     bottom_frame = LabelFrame(window)
     bottom_frame.pack(side=tkinter.BOTTOM, expand=False, fill=BOTH)
 
     #button to add new folders
-    create_folder_icon = Button(bottom_frame, text=text,font='arial 14 bold',bg="#f4fdfe")
+    create_folder_icon = Button(bottom_frame, text='Create folder',font='arial 14 bold',bg="#f4fdfe", command=CreateFolder)
+    # create_folder_icon.pack(side=tkinter.BOTTOM)
+    create_folder_icon.pack(side=tkinter.RIGHT, expand=False, fill="y")
+   
+    window.mainloop() 
+
+def upload_files(window):
+    bottom_frame = LabelFrame(window)
+    bottom_frame.pack(side=tkinter.BOTTOM, expand=False, fill=BOTH)
+
+    #button to add new folders
+    create_folder_icon = Button(bottom_frame, text='Create file',font='arial 14 bold',bg="#f4fdfe", command=CreateFolder)
     # create_folder_icon.pack(side=tkinter.BOTTOM)
     create_folder_icon.pack(side=tkinter.RIGHT, expand=False, fill="y")
    
@@ -73,9 +134,20 @@ def display_files(folder_name):
     file_frame.pack(expand=False, fill=BOTH)
 
     message= "GET " + folder_name
+    print("client send msg: " + message)
     client_socket.send(message.encode())  # send message, default encoding encoding="utf-8", errors="strict"
+    
+    sleep(3)
+    
     files = client_socket.recv(1024).decode()  # receive files
     files = files.split('\n')
+    
+    print("files in folder:", files)
+
+    if 'empty' in files:
+        no_file = Label(file_frame, text="Current folder is empty", background="#f4fdfe", bd=0,  anchor=tkinter.W)
+        no_file.pack()
+        return
     
     receive_img = Image.open("../assets/icons/receive.png")
 
@@ -97,9 +169,9 @@ def display_files(folder_name):
 
     #display all files on client
     for index,f in enumerate(files):
-        file = Label(file_frame, text=f, background="#f4fdfe", cursor="arrow", anchor=tkinter.W)
+        indiv_file = Label(file_frame, text=f, background="#f4fdfe", cursor="arrow", anchor=tkinter.W)
         # TO ADD: click file to open
-        file.grid(row=index, column=0, sticky="w")
+        indiv_file.grid(row=index, column=0, sticky="w")
 
         receive_btn = tkinter.Button(file_frame, image=new_receive_image, anchor=tkinter.E)
         receive_btn.configure(borderwidth=0, highlightthickness=0, relief="flat")
@@ -111,7 +183,7 @@ def display_files(folder_name):
         #delete_btn.pack(side=tkinter.RIGHT)      
         delete_btn.grid(row=index, column=2)
 
-        upload_option(window, "Upload file")
+        upload_files(window)
 
 def folder_clicked(event):
     print("Folder clicked")
@@ -149,6 +221,7 @@ def Download():
 
 #Handle send function
 def Send(folders):
+    global window 
     window = Toplevel(root)
     window.title("Send")
     window.geometry("450x560+500+200")
@@ -210,6 +283,7 @@ def Send(folders):
         #delete_btn.pack(side=tkinter.RIGHT)      
         delete_btn.grid(row=index, column=2)
 
+    upload_folder(window)
 
     #display all folders
     # folder1 = Label(file_frame, text="Folder 1", background="#f4fdfe", cursor="arrow", anchor=tkinter.W)
@@ -228,7 +302,6 @@ def Send(folders):
     # receive_btn.configure(borderwidth=0, highlightthickness=0, relief="flat")
     # receive_btn.pack(side=tkinter.RIGHT)
 
-    upload_option(window, "Create folder")
 
 # def start_server():
 #     #init server socket

@@ -34,18 +34,26 @@ while True: # keep looping looking for new clients when previous closes
         print("\tNow listening for incoming messages...\n")
 
         message = conn.recv(1024).decode()
+        print("server recv message: " + str(message))
+
         if not message: break
         cmd = message[:message.index(" ")]
+        print("server recv command: " + str(cmd))
         folder = message[message.index(" ") + 1:]
-
-        print("folder gotten: " + folder)
-        print("CMD: " + cmd)
+        print("server recv folder: " + str(folder))
         
         if cmd == "GET": 
             #send files in folder to client to display
             folder_path = os.path.join(os.getcwd(), folder)
             dir_contents = os.listdir(folder_path)
+            print("dir contents: ", dir_contents)
             files = [d for d in dir_contents if os.path.isfile(os.path.join(folder_path, d))]
             files = '\n'.join(files)
-            if len(files) == 0: files = 'empty'
+            print("file contents: ", files)
+            print("server detected files: " + files + " in folder: " + folder_path)
+            if len(files) == 0: files = 'empty\n'
             conn.sendall(files.encode())  # send files to the client
+        elif cmd == 'create': #Create Folder: Done
+            folder_path = os.path.join(os.getcwd(), folder)
+            os.makedirs(folder_path)
+            print('\tFolder was created.')
