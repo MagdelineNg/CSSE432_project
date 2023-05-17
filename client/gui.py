@@ -147,11 +147,17 @@ class FolderView(tk.Tk):
         message  = "upload " + upload_loc
         self.client_socket.send(message.encode())
         # do upload folder stuff
+        # with tarfile.open(mode="w|", fileobj=self.client_socket.makefile("wb")) as tar:
+        #     for root, dirs, files in os.walk(upload_loc):
+        #         for file in files:
+        #             file_path = os.path.join(root, file)
+        #             tar.add(file_path)
+        files = [os.path.join(root, file) for root, dirs, files in os.walk(upload_loc) for file in files]
         with tarfile.open(mode="w|", fileobj=self.client_socket.makefile("wb")) as tar:
-            for root, dirs, files in os.walk(upload_loc):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    tar.add(file_path)
+            if files:
+                last_file = files[-1]
+                parent_dir = os.path.dirname(last_file)
+                tar.add(parent_dir, arcname=os.path.basename(parent_dir))
         print('\tFolder was sent.')
         self.destroy()
         self.__init__(self.client_socket)
@@ -162,6 +168,7 @@ class FileView(tk.Tk):
         self.geometry("500x300+300+200")
         self.title("Client Window")
         self.client_socket = client_socket
+        self.folder_name = folder_name
         tk.Label(self, text=folder_name).pack(pady=5)
         files = self.client_socket.recv(1024).decode()  # receive files
         files = files.split('\n')
@@ -216,7 +223,7 @@ class FileView(tk.Tk):
         except FileNotFoundError:
             print('\tFile does not exist.')
         self.destroy()
-        self.__init__(self.client_socket)
+        self.__init__(self.client_socket, self.folder_name)
 
     def access_file(self, file_name):
         message  = "access " + file_name
@@ -229,7 +236,7 @@ class FileView(tk.Tk):
         message  = "delete " + file_name
         self.client_socket.send(message.encode()) 
         self.destroy()
-        self.__init__(self.client_socket)
+        self.__init__(self.client_socket, self.folder_name)
 
     def btn_download_file_popup(self, file_name):
         popup = tk.Toplevel()
