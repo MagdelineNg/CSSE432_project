@@ -5,17 +5,14 @@ import os
 import sys
 import tarfile
 
-# Server configuration
-SERVER_HOST = '0.0.0.0'  # Listen on all network interfaces
-SERVER_PORT = 9999
-BUFFER_SIZE = 4096
-
 # Shared folder path
 SHARED_FOLDER = 'shared_folder'
 
 class FileShareApp(tk.Tk):
-    def __init__(self):
+    def __init__(self, server_ip, port):
         super().__init__()
+        self.server_ip = server_ip
+        self.port = port
         self.geometry("500x300+300+200")
         self.title("Client Window")
         self.lbl_status = tk.Label(self, text="Client: Not connected")
@@ -28,7 +25,7 @@ class FileShareApp(tk.Tk):
         self.btn_list_folders.pack(pady=5)
 
     def connect_to_server(self):
-        server_addr = (SERVER_HOST, SERVER_PORT)
+        server_addr = (self.server_ip, self.port)
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.client_socket.connect(server_addr)
         self.lbl_status.config(text="Client: Connected")
@@ -257,5 +254,10 @@ class SingleFileView(tk.Tk):
         file_view.mainloop()
 
 if __name__ == '__main__':
-    app = FileShareApp()
+    if(len(sys.argv) != 3):
+        print("Usage: python gui.py <server_(IP)_address> <server_port_number>")
+        sys.exit()
+    port = int(sys.argv[2])
+    server_ip = socket.gethostbyname(sys.argv[1])
+    app = FileShareApp(server_ip, port)
     app.mainloop()
