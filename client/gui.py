@@ -6,6 +6,8 @@ import sys
 import tarfile
 from PIL import Image, ImageTk
 from pdf2image import convert_from_bytes
+import fitz
+from tkinter import ttk
 
 # Shared folder path
 SHARED_FOLDER = 'shared_folder'
@@ -278,12 +280,14 @@ class SingleFileView(tk.Tk):
         self.btn_back.pack(pady=5)
         file_extension = os.path.splitext(file_name)[1]
         print('file_extension:', file_extension)
-        if file_extension == '.txt' or file_extension == '.pdf' or file_extension == '.docx':
+        if file_extension == '.txt':
             self.render_text_file()
-        if file_extension == '.pdf':
+        elif file_extension == '.pdf':
             self.render_pdf_file()
-        if file_extension == '.jpg' or file_extension == '.jpeg' or file_extension == '.png' or file_extension == '.gif' or file_extension == '.JPG':
+        elif file_extension == '.jpg' or file_extension == '.jpeg' or file_extension == '.png' or file_extension == '.gif' or file_extension == '.JPG':
             self.render_image_file()
+        else:
+            tk.Label(self, text="This file type cannot be accessed").pack()
 
     def render_text_file(self):
         text_widget = tk.Text(self)
@@ -315,11 +319,24 @@ class SingleFileView(tk.Tk):
             if not data: break
             pdf_data += data
             if len(data) < 1024: break
-        images = convert_from_bytes(pdf_data, size=(300, 300))  # Adjust the size as needed
-        for image in images:
-            self.photo = ImageTk.PhotoImage(image)
-            image_label = tk.Label(self, image=self.photo)
-            image_label.pack()
+        canvas = tk.Canvas(self)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        frame = tk.Frame(canvas)
+        canvas.create_window((0, 0), window=frame, anchor=tk.NW)
+        doc = fitz.open("pdf", pdf_data)
+        for i, page in enumerate(doc):
+            pix = page.get_pixmap()
+            image = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+            photo = ImageTk.PhotoImage(image)
+            
+            label = tk.Label(frame, image=photo)
+            label.image = photo
+            label.pack(pady=10)
+        frame.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox("all"))
 
     def back(self):
         message  = 'back'
