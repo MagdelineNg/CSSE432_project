@@ -67,13 +67,16 @@ class FolderView(tk.Tk):
                 tk.Button(button_frame, text='download', command=lambda folder=f: self.download_folder_popup(folder)).grid(row=index, column=2, pady=5)
         self.btn_create_folder = tk.Button(self, text="Create Folder", command=self.create_folder_popup)
         self.btn_create_folder.pack(pady=5)
-    #     self.btn_back = tk.Button(self, text='Go Back', command=self.back)
-    #     self.btn_back.pack(pady=5)
+        self.btn_upload_folder = tk.Button(self, text="Upload Folder", command=self.upload_folder_popup)
+        self.btn_upload_folder.pack(pady=5)
+        self.btn_back = tk.Button(self, text='Disconnect', command=self.back)
+        self.btn_back.pack(pady=5)
 
-    # def back(self):
-    #     self.destroy()
-    #     view = FileShareApp()
-    #     view.mainloop()
+    def back(self):
+        self.destroy()
+        self.client_socket.close()
+        view = FileShareApp(server_ip, port)
+        view.mainloop()
 
     def create_folder_popup(self):
         popup = tk.Toplevel()
@@ -95,6 +98,17 @@ class FolderView(tk.Tk):
         entry = tk.Entry(popup)
         entry.pack()
         self.submit_button = tk.Button(popup, text="Submit", command=lambda: self.download_folder(entry.get(), popup, folder_name))
+        self.submit_button.pack()
+
+    def upload_folder_popup(self):
+        popup = tk.Toplevel()
+        popup.geometry("160x75+475+300")
+        popup.title("Input")
+        entry_label = tk.Label(popup, text="Upload location:")
+        entry_label.pack()
+        entry = tk.Entry(popup)
+        entry.pack()
+        self.submit_button = tk.Button(popup, text="Submit", command=lambda: self.upload_folder(entry.get(), popup))
         self.submit_button.pack()
 
     def create_folder(self, folder_name, popup: tk.Toplevel):
@@ -126,6 +140,21 @@ class FolderView(tk.Tk):
         # download stuff- works with input './' as current directory
         with tarfile.open(mode="r|", fileobj=self.client_socket.makefile("rb")) as tar:
             tar.extractall()
+
+    def upload_folder(self, upload_loc, popup: tk.Toplevel):
+        print("User input:", upload_loc)
+        popup.destroy()
+        message  = "upload " + upload_loc
+        self.client_socket.send(message.encode())
+        # do upload folder stuff
+        with tarfile.open(mode="w|", fileobj=self.client_socket.makefile("wb")) as tar:
+            for root, dirs, files in os.walk(upload_loc):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    tar.add(file_path)
+        print('\tFolder was sent.')
+        self.destroy()
+        self.__init__(self.client_socket)
 
 class FileView(tk.Tk):
     def __init__(self, client_socket: socket.socket, folder_name):

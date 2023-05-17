@@ -105,6 +105,10 @@ def server_program():
                             file_path = os.path.join(root, file)
                             tar.add(file_path)
                 print('\tFolder was sent.')
+            elif cmd == 'upload': #Upload Folder: TODO
+                with tarfile.open(mode="r|", fileobj=conn.makefile("rb")) as tar:
+                    tar.extractall()
+                print('\tFolder was uploaded.')
             elif cmd == 'create': #Create Folder: Done
                 folder_path = os.path.join(os.getcwd(), folder)
                 os.makedirs(folder_path)
