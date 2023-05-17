@@ -109,7 +109,7 @@ class FolderView(tk.Tk):
         message  = "access " + folder_name
         self.client_socket.send(message.encode())
         self.destroy()
-        file_view = FileView(self.client_socket)
+        file_view = FileView(self.client_socket, folder_name)
         file_view.grid()
 
     def delete_folder(self, folder_name):
@@ -128,12 +128,12 @@ class FolderView(tk.Tk):
             tar.extractall()
 
 class FileView(tk.Tk):
-    def __init__(self, client_socket: socket.socket):
+    def __init__(self, client_socket: socket.socket, folder_name):
         super().__init__()
         self.geometry("500x300+300+200")
         self.title("Client Window")
         self.client_socket = client_socket
-
+        tk.Label(self, text=folder_name).pack(pady=5)
         files = self.client_socket.recv(1024).decode()  # receive files
         files = files.split('\n')
         self.buttons = [] 
@@ -193,7 +193,7 @@ class FileView(tk.Tk):
         message  = "access " + file_name
         self.client_socket.send(message.encode()) 
         self.destroy()
-        file_view = SingleFileView(self.client_socket)
+        file_view = SingleFileView(self.client_socket, file_name)
         file_view.grid()
 
     def delete_file(self, file_name):
@@ -231,10 +231,12 @@ class FileView(tk.Tk):
         self.client_socket.send(done.encode())
 
 class SingleFileView(tk.Tk):
-    def __init__(self, client_socket: socket.socket):
+    def __init__(self, client_socket: socket.socket, file_name):
         super().__init__()
         self.geometry("500x300+300+200")
         self.title("Client Window")
+        tk.Label(self, text=file_name).pack(pady=5)
+        self.file_name = file_name
         self.client_socket = client_socket
         self.btn_back = tk.Button(self, text="Go Back", command=self.back)
         self.btn_back.pack(pady=5)
@@ -250,7 +252,7 @@ class SingleFileView(tk.Tk):
         message  = 'back'
         self.client_socket.send(message.encode()) 
         self.destroy()
-        file_view = FileView(self.client_socket)
+        file_view = FileView(self.client_socket, self.file_name)
         file_view.mainloop()
 
 if __name__ == '__main__':
