@@ -80,7 +80,7 @@ class FolderView(tk.Tk):
 
     def create_folder_popup(self):
         popup = tk.Toplevel()
-        popup.geometry("160x75+475+300")
+        popup.geometry("240x100+430+270")
         popup.title("Input")
         entry_label = tk.Label(popup, text="Folder name:")
         entry_label.pack()
@@ -91,7 +91,7 @@ class FolderView(tk.Tk):
 
     def download_folder_popup(self, folder_name):
         popup = tk.Toplevel()
-        popup.geometry("160x75+475+300")
+        popup.geometry("240x100+430+270")
         popup.title("Input")
         entry_label = tk.Label(popup, text="Download location:")
         entry_label.pack()
@@ -102,7 +102,7 @@ class FolderView(tk.Tk):
 
     def upload_folder_popup(self):
         popup = tk.Toplevel()
-        popup.geometry("160x75+475+300")
+        popup.geometry("240x100+430+270")
         popup.title("Input")
         entry_label = tk.Label(popup, text="Upload location:")
         entry_label.pack()
@@ -200,7 +200,7 @@ class FileView(tk.Tk):
 
     def btn_upload_file_popup(self):
         popup = tk.Toplevel()
-        popup.geometry("160x75+475+300")
+        popup.geometry("240x100+430+270")
         popup.title("Input")
         entry_label = tk.Label(popup, text="Upload location:")
         entry_label.pack()
@@ -242,7 +242,7 @@ class FileView(tk.Tk):
 
     def btn_download_file_popup(self, file_name):
         popup = tk.Toplevel()
-        popup.geometry("160x75+475+300")
+        popup.geometry("240x100+430+270")
         popup.title("Input")
         entry_label = tk.Label(popup, text="Download location:")
         entry_label.pack()
