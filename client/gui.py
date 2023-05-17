@@ -5,7 +5,7 @@ import os
 import sys
 import tarfile
 from PIL import Image, ImageTk
-from PyPDF2 import PdfFileReader
+from pdf2image import convert_from_bytes
 
 # Shared folder path
 SHARED_FOLDER = 'shared_folder'
@@ -315,13 +315,11 @@ class SingleFileView(tk.Tk):
             if not data: break
             pdf_data += data
             if len(data) < 1024: break
-        pdf = PdfFileReader(io.BytesIO(pdf_data))
-        page = pdf.getPage(0)  # Load the first page
-        image = page.extractText()  # Convert page to image
-        image = Image.open(io.BytesIO(image))
-        photo = ImageTk.PhotoImage(image)
-        image_label = tk.Label(self, image=photo)
-        image_label.pack()
+        images = convert_from_bytes(pdf_data, size=(300, 300))  # Adjust the size as needed
+        for image in images:
+            self.photo = ImageTk.PhotoImage(image)
+            image_label = tk.Label(self, image=self.photo)
+            image_label.pack()
 
     def back(self):
         message  = 'back'
