@@ -179,7 +179,7 @@ class FileView(tk.Tk):
         popup.destroy()
         message  = "upload " + file_loc
         self.client_socket.send(message.encode()) 
-        # does not work yet
+        # works with realtive path: ./folder1/file.txt
         try:
             with open(file_loc, "rb") as f:
                 while True:
@@ -221,7 +221,7 @@ class FileView(tk.Tk):
         popup.destroy()
         message  = "download " + file_name
         self.client_socket.send(message.encode()) 
-        # download stuff- works with input './folder' as input to folder1
+        # works with input './folder' as input to folder1
         download_loc = download_loc + '/' + file_name
         with open(download_loc, "wb") as f:
             while True:

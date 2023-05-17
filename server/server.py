@@ -84,7 +84,8 @@ def server_program():
                         print('\tFile was sent.')
                         conn.recv(1024)
                     elif cmd == 'upload': #Upload File: Done
-                        file_path = './' + folder + '/' + file
+                        file = file.split('/')[-1]
+                        file_path = folder + '/' + file
                         with open(file_path, "wb") as f:
                             while True:
                                 data = conn.recv(1024)
