@@ -1,9 +1,11 @@
 import tkinter as tk
 import socket
-import threading
+import io
 import os
 import sys
 import tarfile
+from PIL import Image, ImageTk
+from PyPDF2 import PdfFileReader
 
 # Shared folder path
 SHARED_FOLDER = 'shared_folder'
@@ -148,12 +150,6 @@ class FolderView(tk.Tk):
         popup.destroy()
         message  = "upload " + upload_loc
         self.client_socket.send(message.encode())
-        # do upload folder stuff
-        # with tarfile.open(mode="w|", fileobj=self.client_socket.makefile("wb")) as tar:
-        #     for root, dirs, files in os.walk(upload_loc):
-        #         for file in files:
-        #             file_path = os.path.join(root, file)
-        #             tar.add(file_path)
         files = [os.path.join(root, file) for root, dirs, files in os.walk(upload_loc) for file in files]
         with tarfile.open(mode="w|", fileobj=self.client_socket.makefile("wb")) as tar:
             if files:
@@ -280,13 +276,52 @@ class SingleFileView(tk.Tk):
         self.client_socket = client_socket
         self.btn_back = tk.Button(self, text="Go Back", command=self.back)
         self.btn_back.pack(pady=5)
+        file_extension = os.path.splitext(file_name)[1]
+        print('file_extension:', file_extension)
+        if file_extension == '.txt' or file_extension == '.pdf' or file_extension == '.docx':
+            self.render_text_file()
+        if file_extension == '.pdf':
+            self.render_pdf_file()
+        if file_extension == '.jpg' or file_extension == '.jpeg' or file_extension == '.png' or file_extension == '.gif' or file_extension == '.JPG':
+            self.render_image_file()
+
+    def render_text_file(self):
         text_widget = tk.Text(self)
         text_widget.pack()
         while True:
-            data = client_socket.recv(1024)
+            data = self.client_socket.recv(1024)
             if not data: break
             text_widget.insert(tk.END, data)
             if len(data) < 1024: break
+
+    def render_image_file(self):
+        image_data = b""
+        while True:
+            data = self.client_socket.recv(1024)
+            if not data: break
+            image_data += data
+            if len(data) < 1024: break
+        image = Image.open(io.BytesIO(image_data))
+        width, height = 300, 200
+        image = image.resize((width, height), Image.ANTIALIAS)
+        self.photo = ImageTk.PhotoImage(image)  # Store the photo as an attribute
+        image_label = tk.Label(self, image=self.photo)
+        image_label.pack()
+
+    def render_pdf_file(self):
+        pdf_data = b""
+        while True:
+            data = self.client_socket.recv(1024)
+            if not data: break
+            pdf_data += data
+            if len(data) < 1024: break
+        pdf = PdfFileReader(io.BytesIO(pdf_data))
+        page = pdf.getPage(0)  # Load the first page
+        image = page.extractText()  # Convert page to image
+        image = Image.open(io.BytesIO(image))
+        photo = ImageTk.PhotoImage(image)
+        image_label = tk.Label(self, image=photo)
+        image_label.pack()
 
     def back(self):
         message  = 'back'
