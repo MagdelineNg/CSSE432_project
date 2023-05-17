@@ -2,6 +2,7 @@ import socket
 import sys
 import os
 import tarfile
+import shutil
 
 
 def server_program():
@@ -109,7 +110,7 @@ def server_program():
                 print('\tFolder was created.')
             elif cmd == 'delete': # Delete Folder: Done
                 folder_path = os.path.join(os.getcwd(), folder)
-                os.rmdir(folder_path)
+                shutil.rmtree(folder_path)
                 print('\tFolder was deleted.')
             else: print('\tPlease use commands: access, download, create, and delete.')
 
