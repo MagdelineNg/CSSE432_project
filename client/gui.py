@@ -140,6 +140,8 @@ class FolderView(tk.Tk):
         # download stuff- works with input './' as current directory
         with tarfile.open(mode="r|", fileobj=self.client_socket.makefile("rb")) as tar:
             tar.extractall()
+        self.destroy()
+        self.__init__(self.client_socket)
 
     def upload_folder(self, upload_loc, popup: tk.Toplevel):
         print("User input:", upload_loc)
@@ -265,6 +267,8 @@ class FileView(tk.Tk):
         print('\tFile has been downloaded.')
         done = "done"
         self.client_socket.send(done.encode())
+        self.destroy()
+        self.__init__(self.client_socket, self.folder_name)
 
 class SingleFileView(tk.Tk):
     def __init__(self, client_socket: socket.socket, file_name):
