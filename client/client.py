@@ -55,7 +55,7 @@ def client_program():
                     data_str = data_bytes.decode()
                     print(data_str)
                     print('\tFile has been downloaded.')
-                    done = "done"
+                    done = "back"
                     client_socket.send(done.encode())
                 elif cmd == 'download': # Download File
                     print('What directory would you like to save to?')
