@@ -9,9 +9,6 @@ from pdf2image import convert_from_bytes
 import fitz
 from tkinter import ttk
 
-# Shared folder path
-SHARED_FOLDER = 'shared_folder'
-
 class FileShareApp(tk.Tk):
     def __init__(self, server_ip, port):
         super().__init__()
