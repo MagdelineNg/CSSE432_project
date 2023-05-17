@@ -36,6 +36,7 @@ def server_program():
             folders = '\n'.join(folders)
             if len(folders) == 0: folders = 'empty\n'
             conn.sendall(folders.encode())  # send folders to the client
+            print('folders:',folders)
 
             print("\tNow listening for incoming messages...\n")
             # receive data stream. it won't accept data packet greater than 1024 bytes
@@ -52,6 +53,7 @@ def server_program():
                     files = '\n'.join(files)
                     if len(files) == 0: files = 'empty\n'
                     conn.sendall(files.encode())  # send files to the client
+                    print('files:',files)
 
                     message = conn.recv(1024).decode()
                     if not message: break
@@ -68,7 +70,8 @@ def server_program():
                                 conn.sendall(data)
                                 if len(data) < 1024: break
                         print('\tFile was sent.')
-                        conn.recv(1024)
+                        b = conn.recv(1024).decode()
+                        if b == 'back': continue
                     elif cmd == 'download': # Download File
                         file_path = folder + '/' + file
                         with open(file_path, "rb") as f:
@@ -80,7 +83,7 @@ def server_program():
                         print('\tFile was sent.')
                         conn.recv(1024)
                     elif cmd == 'upload': #Upload File: Done
-                        file_path = folder + '/' + file
+                        file_path = './' + folder + '/' + file
                         with open(file_path, "wb") as f:
                             while True:
                                 data = conn.recv(1024)
